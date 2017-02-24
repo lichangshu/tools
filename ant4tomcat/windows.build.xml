@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ant4tomcat" default="deploy" basedir =".">
+
+  <property name="tomcat.port" value="8080"></property>
+  <property name="tomcat.home" value="D:\\Develop\\Apache Software Foundation\\apache-tomcat-7.0.62\\"></property>
+  <property name="war.from" value=".\\target\\x12server-1.0-SNAPSHOT.war"></property>
+  <property name="war.target" value="${tomcat.home}\\webapps\\ROOT"></property><!-- Not end with ".war" !!! -->
+
+  <target name="stop_tomcat">
+    <echo>stop tomcat !</echo>
+    <exec dir="${tomcat.home}" executable="${tomcat.home}\\bin\\shutdown.bat" failonerror="false"></exec>
+    <sleep seconds="10"/>
+  </target>
+  <target name="start_tomcat">
+    <echo>start tomcat !</echo>
+    <echo> jenkins 参数化构建过程 复写掉默认的构建参数 BUILD_ID 为任意值 如: BUILD_ID=DONOT_KILL_ME </echo>
+    <exec dir="${tomcat.home}" executable="${tomcat.home}\\bin\\startup.bat" failonerror="true"></exec>
+  </target>
+  <target name="copywar">
+    <delete dir="${tomcat.home}\\work\\"></delete>
+    <delete dir="${war.target}"></delete>
+    <copyfile src="${war.from}" dest="${war.target}.war" forceoverwrite="true"></copyfile>
+  </target>
+  <target name="deploy" depends="stop_tomcat, copywar, start_tomcat">
+    <echo> Tomcat is starting!  Waiting for a  moment ! </echo>
+  </target>
+  <target name="kill_tomcat">
+    <exec executable="cmd" failonerror="false" outputproperty="portlist">
+      <arg value="/c"/>
+      <arg value="netstat"/>
+      <arg value="-ano"/>
+      <arg value="|"/>
+      <arg value="findstr"/>
+      <arg value="${tomcat.port}"/>
+    </exec>
+    <script language="javascript">
+<![CDATA[
+    print(project);
+    var portlist = project.getProperty("portlist");
+    print(portlist);
+    var ps = portlist.search(/\d+$/gi);
+    if(ps > 0){
+      project.setProperty("portlist", portlist.substring(ps));
+    } else {
+      project.setProperty("portlist", "-1");
+    }
+]]>
+    </script>
+    <exec executable="cmd" failonerror="false" outputproperty="portlist">
+      <arg value="/c"/>
+      <arg value="taskkill"/>
+      <arg value="/PID"/>
+      <arg value="${portlist}"/>
+    </exec>
+  </target>
+
+</project>
