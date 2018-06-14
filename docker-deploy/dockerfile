@@ -1,0 +1,16 @@
+FROM openjdk:8u171-jdk
+VOLUME /tmp
+
+ADD app.jar /opt/app.jar
+ADD application-online.yml /opt/application-online.yml
+
+WORKDIR /opt/
+
+ENV SPRING_PROFILES_ACTIVE online
+
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+EXPOSE 8080
+
+CMD [ "/usr/bin/java", "-Djava.security.egd=file:/dev/urandom", "-jar", "/opt/app.jar" ]
